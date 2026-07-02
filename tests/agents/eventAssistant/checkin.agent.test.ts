@@ -473,6 +473,40 @@ describe('checkin handler tests', () => {
   })
 
   describe('rate limiting', () => {
+    it('does not send a checkin when conversation started less than minInterval ago and no prior DMs', async () => {
+      const { agent: ag } = await createCheckinConversation([user1])
+      ag.agentConfig = { ...ag.agentConfig, minInterval: 10 }
+      // Override startTime to 2 min ago — well within the 10-min minInterval
+      ag.conversation.startTime = new Date(Date.now() - 2 * 60 * 1000)
+
+      await prepareMessagesForAgent([], ag.conversation, ag)
+      const responses = await runCheckin(ag, new Date())
+
+      expect(responses).toHaveLength(0)
+    })
+
+    it(
+      'is eligible for first checkin after minInterval has passed since conversation start with no prior DMs',
+      async () => {
+        const { agent: ag } = await createCheckinConversation([user1])
+        ag.agentConfig = { ...ag.agentConfig, minInterval: 10 }
+        await loadPartTimeWorkTranscript(ag.conversation, true)
+
+        // 3 participant messages to make SOCIAL_REASSURANCE eligible
+        const msg1 = await createDirectMessage('This is really interesting', user1, ag.conversation, getTime(2 * 60))
+        const msg2 = await createDirectMessage('I had no idea about that', user1, ag.conversation, getTime(4 * 60))
+        const msg3 = await createDirectMessage('Makes me think about my own work', user1, ag.conversation, getTime(6 * 60))
+
+        await prepareMessagesForAgent([msg1, msg2, msg3], ag.conversation, ag)
+        // endTime is 12 min after startTime (15 min ago) — past the 10-min minInterval, no prior agent messages
+        const responses = await runCheckin(ag, getTime(12 * 60))
+
+        const checkin = findCheckinForUser(responses, user1._id)
+        expect(checkin).toBeDefined()
+      },
+      testTimeout
+    )
+
     it(
       'does not send a checkin when one was already sent recently',
       async () => {
