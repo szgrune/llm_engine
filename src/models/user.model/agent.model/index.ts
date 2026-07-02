@@ -371,7 +371,7 @@ agentSchema.method('respond', async function (userMessage = null) {
       directChannels,
       agentTypes[this.agentType].parseInput
     )
-    if (conversationHistory.messages.length === 0 && !userMessage) {
+    if (conversationHistory.messages.length === 0 && !userMessage && !this.triggers?.periodic?.proactive) {
       logger.debug(`No new messages to respond to ${this.agentType} ${this._id}`)
       return []
     }

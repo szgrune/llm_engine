@@ -804,7 +804,7 @@ export interface Triggers {
     conversationHistorySettings?: ConversationHistorySettings
     allowMessagesFromAgents?: boolean
   }
-  periodic?: { timerPeriod: number; conversationHistorySettings?: ConversationHistorySettings }
+  periodic?: { timerPeriod: number; proactive?: boolean; conversationHistorySettings?: ConversationHistorySettings }
 }
 
 export interface GenericAgentAnswer {
